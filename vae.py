@@ -1,4 +1,11 @@
 import tensorflow as tf
+from normalizing_flow import nf_linear
+
+# Prior
+class prior():
+	transform_names = ['radial', 'linear'] * 16
+	print(dir(nf_linear))
+	a = nf_linear.LinearTransform(3)
 
 # Gaussian MLP as encoder
 def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
