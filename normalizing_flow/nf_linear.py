@@ -9,7 +9,6 @@ class LinearTransform():
         #self.w = tf.Variable([.1,.1], name="w")  # orig
         # I want planes in all directions
         self.w = tf.Variable(tf.random_uniform([input_dim], -.1, .1), name="w")
-        #u = tf.Variable([0.,0.])
         u = tf.Variable(np.zeros(input_dim, 'float32'))
 
         #upar0 = [np.log(np.e-1.)] * self.w

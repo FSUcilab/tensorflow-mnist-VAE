@@ -222,7 +222,7 @@ def main(args):
     z_in = tf.placeholder(tf.float32, shape=[None, dim_z], name='latent_variable')
 
     # network architecture
-    y, z, loss, neg_marginal_likelihood, KL_divergence = vae.autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob)
+    y, z, loss, neg_marginal_likelihood, KL_divergence, log_det = vae.autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob)
 
     # optimization
     train_op = tf.train.AdamOptimizer(learn_rate).minimize(loss)
@@ -288,7 +288,7 @@ def main(args):
 
                 _, tot_loss, loss_likelihood, loss_divergence = sess.run(
                     (train_op, loss, neg_marginal_likelihood, KL_divergence),
-                    feed_dict={x_hat: batch_xs_input, x: batch_xs_target, keep_prob : 0.9})
+                    feed_dict={x_hat: batch_xs_input, x: batch_xs_target, keep_prob : 0.9})   ### ERROR (zk)
 
             # print cost every epoch
             print("epoch %d: L_tot %03.2f L_likelihood %03.2f L_divergence %03.2f" % (epoch, tot_loss, loss_likelihood, loss_divergence))

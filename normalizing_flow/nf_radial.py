@@ -2,8 +2,9 @@ import numpy as np
 import tensorflow as tf
 from IPython import embed
 import sys
-import kingma_tests as km
-from plots import makeScatterPlots, makeScatterPlot
+
+# How to get this recognized when running from parent directory? 
+#from plots import makeScatterPlots, makeScatterPlot
 
 
 class RadialTransform():
@@ -35,9 +36,9 @@ class RadialTransform():
         self.beta0  = tf.Variable(0., name="beta0")
         #self.beta0  = tf.Variable(tf.random_uniform([1], -1., 1.), name="beta0")
         self.beta = -self.alpha + tf.log(1. + tf.exp(self.beta0)) #+self.alpha))
-		# beta=0 ==> exp(alpha) = 1 + exp(beta0)
-		# exp(beta0) = (exp(alpha)-1)
-		# beta0 = log(exp(alpha)-1.)
+        # beta=0 ==> exp(alpha) = 1 + exp(beta0)
+        # exp(beta0) = (exp(alpha)-1)
+        # beta0 = log(exp(alpha)-1.)
 
     def _h(self, r):
         return 1. / (self.alpha + r)
@@ -96,96 +97,4 @@ def targetPdf(z):
     exp1 = np.exp(-0.5*((z[:,0]-2)/0.6)**2)
     exp2 = np.exp(-0.5*((z[:,0]+2)/0.6)**2)
     return np.exp(-(temp1 - np.log(exp1 + exp2)))
-
-
-
-if __name__ == '__main__':
-    from scipy.stats import multivariate_normal, uniform
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-
-    mu = 0.0
-    rv = multivariate_normal([mu,mu], [[1,0],[0,1]]) # Assumed form of original q
-    #rv.pdf = lambda x: np.full(x.shape[:2], 1.0/x.size) # Uniform Distribution
-
-    shape = 2
-    grid_size = 3
-    layers = 12
-    #x, y = np.mgrid[mu-grid_size:mu+grid_size:0.1, mu-grid_size:mu+grid_size:0.1]
-    #pos = np.empty(x.shape + (2,))
-    #pos[:,:,0] = x; pos[:,:,1] = y
-    iz0 = rv.rvs(30000)
-    iq0 = rv.pdf(iz0).reshape(-1,1) # Starting distribution
-    x = iz0[:,0]
-    y = iz0[:,1]
-    #z0 = pos.reshape(-1,2)
-    #q0_grid = rv.pdf(pos) # Gaussian Distribution
-    #q0 = q0_grid.reshape(-1)
-    #grid_shape = q0_grid.shape
-    #embed()
-    #sys.exit()
-
-    makeScatterPlot(x, y, iq0, title="Original Distribution", 
-      xlab="x", ylab="y", file_name="orig_dist.png")
-    """
-    plt.figure(0)
-    plt.title("Original Distribution")
-    plt.scatter(x,y,iq0)
-    plt.savefig("orig_dist.png")
-    plt.close()
-    """
-
-    #z0,alpha,beta for each layer
-    #nf = NormalizingFlow(layers=layers, input_dim=shape, transform_params=tp)
-    nf = NormalizingFlow(layers=layers, input_dim=shape)
-    #zk, qk = nf.flow(iz0, iq0)
-
-    #plotAllDeterminants(iz0, iq0)
-    #quit()
-
-
-    # Get Determinant
-    #det = nf.getDeterminant(z0, q0)
-    #print(det); quit()
-
-    """
-    for k in range(layers):
-        plt.figure(k+1)
-        plt.title("After %d Transformation" % (k+1))
-        plt.contourf(zk[k+1][:,0].reshape(grid_shape), zk[k+1][:,1].reshape(grid_shape), qk[k+1].reshape(grid_shape))
-    plt.savefig("transf.png")
-    """
-
-    max_iter = 100000
-    batch_size = 256
-    batch_size = 100
-    #batch_size = 10
-
-    for i in range(max_iter):
-        z0 = rv.rvs(batch_size)
-        q0 = rv.pdf(z0).reshape(-1,1) # Starting distribution
-        #lst = nf.getParams(z0, q0)
-        #print("z0= ", lst)
-        #quit()
-        lst = nf.getParams(z0, q0)
-        #print("\ninitial params: ", lst)
-        cost = nf.partial_fit(z0, q0)
-        #print("\niter %06d, cost= %14.7e" % (i, cost))
-        #lst = nf.getParams(z0, q0)
-        #print("\nparams after cost: ", lst)
-
-        if i % 100 == 0:
-            lst = nf.getDeterminant(z0, q0)
-            #print("\nlst= ", lst)
-            lst = nf.getParams(z0, q0)
-            #print("\nparams= ", lst)
-            #quit()
-
-        #"""
-        if i % 1000 == 0:
-            print("make plots: iter ", i)
-            #plotDeterminant(iz0, iq0, nf)
-            zk, qk = nf.flow(iz0, iq0)
-            makeScatterPlots(i, zk, qk) # pos.reshape(-1,2), q0_grid.reshape(-1))
-        #"""
 

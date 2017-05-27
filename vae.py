@@ -1,11 +1,21 @@
 import tensorflow as tf
-from normalizing_flow import nf_linear
+from normalizing_flow.normalizing_flow import NormalizingFlow
+import numpy as np
 
 # Prior
-class prior():
-	transform_names = ['radial', 'linear'] * 16
-	print(dir(nf_linear))
-	a = nf_linear.LinearTransform(3)
+class Prior():
+    def __init__(self, input_dim, transform_names):
+        # Not clear how this initialization works
+        self.nf = NormalizingFlow(transform_names=transform_names, input_dim=input_dim) #, exact=target_pdf)
+        #self.nf._build_graph()
+        #self.transform_names = transform_names
+        #self.transform_dict = {}
+        #self.transform_dict['radial'] = RadialTransform
+        #self.transform_dict['linear'] = LinearTransform
+        #self.transforms = [self.transform_dict[name](self.input_dim) for name in self.transform_names] 
+
+    def getLogDeterminant(self):
+        return self.nf.getLogDeterminant()
 
 # Gaussian MLP as encoder
 def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
@@ -44,7 +54,6 @@ def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
 
 # Bernoulli MLP as decoder
 def bernoulli_MLP_decoder(z, n_hidden, n_output, keep_prob, reuse=False):
-
     with tf.variable_scope("bernoulli_MLP_decoder", reuse=reuse):
         # initializers
         w_init = tf.contrib.layers.variance_scaling_initializer()
@@ -73,12 +82,34 @@ def bernoulli_MLP_decoder(z, n_hidden, n_output, keep_prob, reuse=False):
 
 # Gateway
 def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
-
     # encoding
     mu, sigma = gaussian_MLP_encoder(x_hat, n_hidden, dim_z, keep_prob)
 
+    # prior via normalizing flow
+    transform_names = ['radial', 'linear'] * 2
+    prior = Prior(dim_z, transform_names)
+
     # sampling by re-parameterization technique
     z = mu + sigma * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
+
+    # Feed this z to the prior calculation
+    z = mu + sigma * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
+    z0 = z  # to connect to Normalizing flow code
+
+    # Normal distribution evaluated at z0
+    q0 = tf.exp(-0.5*(z-mu)**2 / sigma**2) / (2.*np.pi*sigma**2)**0.5
+    q0 = tf.reduce_prod(q0, axis=1)
+
+    # Feed (z0,q0) to the normalizing flow code (Must make this easier)
+    layers = len(transform_names)
+    zk = [z0]
+    qk = [q0]
+    for k in range(layers):
+        z_next, q_next = prior.nf.transforms[k](zk[k], qk[k])
+        zk.append(z_next)
+        qk.append(q_next)
+
+    log_det = prior.getLogDeterminant() # orig
 
     # decoding
     y = bernoulli_MLP_decoder(z, n_hidden, dim_img, keep_prob)
@@ -86,7 +117,14 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
 
     # loss
     marginal_likelihood = tf.reduce_sum(x * tf.log(y) + (1 - x) * tf.log(1 - y), 1)
+    # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
     KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
+    KL_divergence += log_det
+
+    # implement normal flow for the prior (inital mean=0, sigma=1)
+    # E_q0 \log p(z) = E_q0 \log p(z0) - E_q0 \sum_i \log(det_i )
+    # I need to be able to sample from p(z)
+    # z0 ~ N(0,1) ==> zk = f(z0)
 
     marginal_likelihood = tf.reduce_mean(marginal_likelihood)
     KL_divergence = tf.reduce_mean(KL_divergence)
@@ -95,7 +133,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
 
     loss = -ELBO
 
-    return y, z, loss, -marginal_likelihood, KL_divergence
+    return y, z, loss, -marginal_likelihood, KL_divergence, log_det
 
 def decoder(z, dim_img, n_hidden):
 
