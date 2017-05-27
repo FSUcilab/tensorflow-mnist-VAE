@@ -286,12 +286,13 @@ def main(args):
                     batch_xs_input = batch_xs_input * np.random.randint(2, size=batch_xs_input.shape)
                     batch_xs_input += np.random.randint(2, size=batch_xs_input.shape)
 
-                _, tot_loss, loss_likelihood, loss_divergence = sess.run(
-                    (train_op, loss, neg_marginal_likelihood, KL_divergence),
+                _, tot_loss, loss_likelihood, loss_divergence, logdet = sess.run(
+                    (train_op, loss, neg_marginal_likelihood, KL_divergence, log_det),
                     feed_dict={x_hat: batch_xs_input, x: batch_xs_target, keep_prob : 0.9})   ### ERROR (zk)
 
             # print cost every epoch
             print("epoch %d: L_tot %03.2f L_likelihood %03.2f L_divergence %03.2f" % (epoch, tot_loss, loss_likelihood, loss_divergence))
+            print("   min/max log_det= ", logdet.min(), logdet.max())
 
             # if minimum loss is updated or final epoch, plot results
             if min_tot_loss > tot_loss or epoch+1 == n_epochs:

@@ -7,12 +7,6 @@ class Prior():
     def __init__(self, input_dim, transform_names):
         # Not clear how this initialization works
         self.nf = NormalizingFlow(transform_names=transform_names, input_dim=input_dim) #, exact=target_pdf)
-        #self.nf._build_graph()
-        #self.transform_names = transform_names
-        #self.transform_dict = {}
-        #self.transform_dict['radial'] = RadialTransform
-        #self.transform_dict['linear'] = LinearTransform
-        #self.transforms = [self.transform_dict[name](self.input_dim) for name in self.transform_names] 
 
     def getLogDeterminant(self):
         return self.nf.getLogDeterminant()
@@ -111,15 +105,29 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
 
     log_det = prior.getLogDeterminant() # orig
 
-    # decoding
+    # decoding 
+    # The input to the decoder is still a sample from the Gaussian q(z|x)
     y = bernoulli_MLP_decoder(z, n_hidden, dim_img, keep_prob)
+
+    # this would correspond to the posterior being modified via IAF or NF
+    #y = bernoulli_MLP_decoder(zk[-1], n_hidden, dim_img, keep_prob)
     y = tf.clip_by_value(y, 1e-8, 1 - 1e-8)
 
     # loss
     marginal_likelihood = tf.reduce_sum(x * tf.log(y) + (1 - x) * tf.log(1 - y), 1)
     # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
     KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
-    KL_divergence += log_det
+    
+	# no normalizing flow
+    #KL_divergence += tf.reduce_sum(log_det, 1)
+
+    #print("shape log_det: ", log_det.shape)
+    #print("shape mu: ", mu.shape)
+
+    # KL += log_det  leads to determinants going to zero. WHY? 
+    # KL -= log_det  leads to determinants going to infinity, but much slower. Why? 
+    #
+    #
 
     # implement normal flow for the prior (inital mean=0, sigma=1)
     # E_q0 \log p(z) = E_q0 \log p(z0) - E_q0 \sum_i \log(det_i )

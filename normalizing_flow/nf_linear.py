@@ -18,17 +18,18 @@ class LinearTransform():
         self.b = tf.Variable(tf.zeros([1]), name="b")
 
         # ensure invertibility (see Rezende paper on Normalizing Flows, Appendix)
+        # impose invertibility of the transformation
         wtu = tf.reduce_sum(self.w * u, 0)
         m = -1. + tf.log(1 + tf.exp(wtu))
         self.u = u + (m - wtu) * self.w / tf.norm(self.w)**2  # invertibility condition
-        #self.u = u   # no invertibility condition
-        #self.w = w
+
+        # no invertibility condition
+        #self.u = u 
 
         # I would like self.u = 0. Therefore, what should be the value of u? 
         # 0 = wtu + m - wtu ==> m = 0 ==> e = 1 + exp(wtu) ==> wtu = log(e-1)
         #  u = upar + uperp  with upar = a*w ==> a = log(e-1)/||w||^2
         #  uperp can be random (we will set to zero)
-
 
 
     def _f(self, z, x):
@@ -42,7 +43,9 @@ class LinearTransform():
         wT_dot_z_plus_b = tf.reduce_sum(self.w * z, 1) + self.b
         z_out = self._f(z, wT_dot_z_plus_b)
         self.determinant = tf.abs(1 + tf.matmul(self._psi(wT_dot_z_plus_b), tf.reshape(self.u, (-1,1))))
+        # equivalent to q_out = q / self.determinant (more numerically stable?)
         q_out = tf.exp(tf.log(q) - tf.log(self.determinant))
+        #print("determ linear shape: ", self.determinant.shape)
         return (z_out, q_out)
 
     def getParams(self):
