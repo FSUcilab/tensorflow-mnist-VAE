@@ -117,6 +117,7 @@ class Plot_Manifold_Learning_Result():
         axes = plt.gca()
         axes.set_xlim([-self.z_range-2, self.z_range+2])
         axes.set_ylim([-self.z_range-2, self.z_range+2])
+        plt.title("Latency: z0 vs z1")
         plt.grid(True)
         plt.savefig(self.DIR + "/" + name)
 

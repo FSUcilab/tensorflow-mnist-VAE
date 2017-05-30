@@ -118,7 +118,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
     KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
     
-	# no normalizing flow
+	# with normalizing flow
     #KL_divergence += tf.reduce_sum(log_det, 1)
 
     #print("shape log_det: ", log_det.shape)
