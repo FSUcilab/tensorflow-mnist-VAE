@@ -1,0 +1,74 @@
+For scripts to work, run: 
+  python run_main.py >& output
+
+In updating the KL(q(z|x) || p(z)), how do I distinguish between 
+updating q via normalizing flow and updating p(z) via normalizing flow? 
+
+run1.txt: output from a run with KL-= logdet
+run2.txt: repeat of run1
+run3.txt: remove invertibility condition on nf_linear. Results still about the same. 
+
+Question: I am not yet sure about how P(z) is used during the training process. 
+
+run4.txt: remove the NF. The total cost goes down smoothly, but not quite as low as when
+using NF. Of course, I'd like to see the generated results. Will they change significantly?
+
+I would like to plot the Prior and the Likelihood for these different cases. 
+
+run5.txt, run6.txt
+KL_divergence += tf.reduce_sum(log_det, 1)
+Linear invertibility imposed. 
+50 epochs, z_dim=2
+L_tot min = 134.7 at epoch 46 (run5)
+L_tot min = 134.4 at epoch 42 (run6)
+min(det) = -12
+
+run7.txt
+No NF. 
+Min. cost is 138. Last total min cost is 146
+
+run8.txt
+
+----------------------------------------------------------------------
+The code only prints data when the total cost reaches a new minimum. Interesting. 
+If PMLR (manifold learning) is Truem noe gets latency plot of some kind that shows clusters. 
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
+results8/: vae
+results9/: vaeNF
+results10/: vaeNF (same parameters as results9)
+results11/: vaeNF (same parameters as results9). The manifold map looks different
+
+Comparing maps in results and results11 (same parameters (with NF)), I find that the ordering of 
+clusters on the 2D plane after 20 epochs look different. Why would that be? The associated labels do 
+not have the same neighbors. I would expect a rotation of the data, but not this amount of difference. 
+----------------------------------------------------------------------
+results12/: vae (No normalizing flow)
+----------------------------------------------------------------------
+results13/: repeat of results11 with 2000 epochs. vaeNF. 
+----------------------------------------------------------------------
+results14/: repeat of results11 without NF (vae) with 20 latent variables.  
+Nan after 118 epochs. LR was 1.e-3. 
+----------------------------------------------------------------------
+results15/: repeat of results15 without NF (vae) with 20 latent variables.  Make learning rate 1.e-4 (it was 1.e-3 in results14/)
+Stopped after 550 iterations.  It is not clear that there is further evolution of the total cost function. 
+----------------------------------------------------------------------
+results16/: repeat of results15 with vaeNF  with 20 latent variables.  Mkae learning rate 1.e-4 (it was 1.e-3 in results14/)
+I stopped the code at 500 iterations.  NaNs develop at iteration 1170. Min Determinant = 1.e-78, max det = 1.e-63 (very small numbers!) 
+What does this mean?
+----------------------------------------------------------------------
+results17/: repeat of result15 without NF (vae). 20 latent variables. lr=1.e-4.  Stopped at 800 iterations (appears to have converged)
+----------------------------------------------------------------------
+Most of the above runs (certainly the last 8) use an analytical formulation of KL + cross-entropy, and a stochastic calculation for 
+the determinants with only a single sample. It will be interesting to compare results when the KL is fully stochastic with a single sample.
+----------------------------------------------------------------------
+results18/: repeat of result17 without NF (vae). 20 latent variables. lr=1.e-4.  Stopped at 800 iterations (appears to have converged)
+Use stochastic (as opposed to analytic) ELBO. Single z sample, average over batch. 
+	analytic_KL       = True  (in vae.py)
+	normalizing_flow  = True  (in vae.py)
+Modified vae: input z in N(0,1) into the NF calculation on the prior, as opposed to (mu,sigma) output from the encoder. 
+This is the only way to allow sampling when using the network as a generator. 
+----------------------------------------------------------------------

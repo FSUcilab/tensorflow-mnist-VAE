@@ -11,6 +11,10 @@ class Prior():
     def getLogDeterminant(self):
         return self.nf.getLogDeterminant()
 
+	def sample(self):
+    	n = 10,000
+    	z = tf.contrib.distributions.Normal(tf.zeros([n]), tf.ones([n])).sample()
+
 # Gaussian MLP as encoder
 def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
     with tf.variable_scope("gaussian_MLP_encoder"):
@@ -84,7 +88,7 @@ def KLStochastic(mu, sigma):
     norm = tf.contrib.distributions.Normal(tf.zeros_like(mu), tf.ones_like(sigma))
     zq = mu + norm.sample() * sigma;
     zp = norm.sample()
-    log_qz_x = norm.log_prob(zq)
+    log_qz_x = norm.log_prob((zq-mu)/sigma)
     log_pz = norm.log_prob(zp)
     KL_divergence = log_qz_x - log_pz
     #KL_divergence = tf.log(qz_x) - tf.log(pz)
@@ -162,15 +166,10 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # mean over batch dimension
     marginal_likelihood = tf.reduce_mean(marginal_likelihood)
     KL_divergence = tf.reduce_mean(KL_divergence)
-
     ELBO = marginal_likelihood - KL_divergence
-
     loss = -ELBO
-
     return y, z, loss, -marginal_likelihood, KL_divergence, log_det
 
 def decoder(z, dim_img, n_hidden):
-
     y = bernoulli_MLP_decoder(z, n_hidden, dim_img, 1.0, reuse=True)
-
     return y
