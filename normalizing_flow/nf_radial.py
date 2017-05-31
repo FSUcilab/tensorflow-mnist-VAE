@@ -37,7 +37,7 @@ class RadialTransform():
 
     def _f(s, z):   # s == self
         s.r = tf.norm(z - s.z00, axis=1)
-        hh = tf.tile(tf.reshape(s._h(s.r), [-1,1]), [1,2])
+        hh = tf.tile(tf.reshape(s._h(s.r), [-1,1]), [1,self.input_dim])
         return z + s.beta * hh * (z-s.z00)
 
     def __call__(s, z, q):  # s == self

@@ -1,2 +1,2 @@
-python run_main.py --dim_z 2 --num_epochs 20 --PMLR true --PRR true
+python run_main.py --dim_z 20 --num_epochs 2000 --PMLR true --PRR true 
 
