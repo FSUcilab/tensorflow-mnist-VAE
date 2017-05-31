@@ -291,7 +291,7 @@ def main(args):
                     feed_dict={x_hat: batch_xs_input, x: batch_xs_target, keep_prob : 0.9})   ### ERROR (zk)
 
             # print cost every epoch
-            print("epoch %d: L_tot %03.2f L_likelihood %03.2f L_divergence %03.2f" % (epoch, tot_loss, loss_likelihood, loss_divergence))
+            print("epoch %d: L_tot %04.2f L_likelihood %04.2f L_divergence %04.2f" % (epoch, tot_loss, loss_likelihood, loss_divergence))
             print("   min/max log_det= ", logdet.min(), logdet.max())
 
             # if minimum loss is updated or final epoch, plot results
@@ -301,17 +301,17 @@ def main(args):
                 if PRR:
                     y_PRR = sess.run(y, feed_dict={x_hat: x_PRR, keep_prob : 1})
                     y_PRR_img = y_PRR.reshape(PRR.n_tot_imgs, IMAGE_SIZE_MNIST, IMAGE_SIZE_MNIST)
-                    PRR.save_images(y_PRR_img, name="/PRR_epoch_%02d" %(epoch) + ".jpg")
+                    PRR.save_images(y_PRR_img, name="/PRR_epoch_%04d" %(epoch) + ".jpg")
 
                 # Plot for manifold learning result
                 if PMLR and dim_z == 2:
                     y_PMLR = sess.run(decoded, feed_dict={z_in: PMLR.z, keep_prob : 1})
                     y_PMLR_img = y_PMLR.reshape(PMLR.n_tot_imgs, IMAGE_SIZE_MNIST, IMAGE_SIZE_MNIST)
-                    PMLR.save_images(y_PMLR_img, name="/PMLR_epoch_%02d" % (epoch) + ".jpg")
+                    PMLR.save_images(y_PMLR_img, name="/PMLR_epoch_%04d" % (epoch) + ".jpg")
 
                     # plot distribution of labeled images
                     z_PMLR = sess.run(z, feed_dict={x_hat: x_PMLR, keep_prob : 1})
-                    PMLR.save_scattered_image(z_PMLR,id_PMLR, name="/PMLR_map_epoch_%02d" % (epoch) + ".jpg")
+                    PMLR.save_scattered_image(z_PMLR,id_PMLR, name="/PMLR_map_epoch_%04d" % (epoch) + ".jpg")
 
 if __name__ == '__main__':
 

@@ -15,6 +15,7 @@ class Prior():
 def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
     with tf.variable_scope("gaussian_MLP_encoder"):
         # initializers
+        # get initialization of " Delving Deep into Rectifiers" paper (2015)
         w_init = tf.contrib.layers.variance_scaling_initializer()
         b_init = tf.constant_initializer(0.)
 
@@ -74,6 +75,26 @@ def bernoulli_MLP_decoder(z, n_hidden, n_output, keep_prob, reuse=False):
 
     return y
 
+def KLAnalytic(mu, sigma):
+    KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
+    return KL_divergence
+
+def KLStochastic(mu, sigma):
+    # KL(q(z|x) || p(z))
+    norm = tf.contrib.distributions.Normal(tf.zeros_like(mu), tf.ones_like(sigma))
+    zq = mu + norm.sample() * sigma;
+    zp = norm.sample()
+    log_qz_x = norm.log_prob(zq)
+    log_pz = norm.log_prob(zp)
+    KL_divergence = log_qz_x - log_pz
+    #KL_divergence = tf.log(qz_x) - tf.log(pz)
+    return KL_divergence
+
+def KLNormalizingFlowPrior(prior):
+    log_det = prior.getLogDeterminant()
+    KL_divergence = tf.reduce_sum(log_det, 1)
+    return KL_divergence, log_det
+
 # Gateway
 def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # encoding
@@ -103,8 +124,6 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
         zk.append(z_next)
         qk.append(q_next)
 
-    log_det = prior.getLogDeterminant() # orig
-
     # decoding 
     # The input to the decoder is still a sample from the Gaussian q(z|x)
     y = bernoulli_MLP_decoder(z, n_hidden, dim_img, keep_prob)
@@ -114,26 +133,34 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     y = tf.clip_by_value(y, 1e-8, 1 - 1e-8)
 
     # loss
+    # summation over dimensions of x
     marginal_likelihood = tf.reduce_sum(x * tf.log(y) + (1 - x) * tf.log(1 - y), 1)
+
     # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
-    KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
+    #KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
+
+    analytic_KL = False
+    normalizing_flow = False
+
+    if analytic_KL:
+        KL_divergence = KLAnalytic(mu, sigma)
+    else:
+        KL_divergence = KLStochastic(mu, sigma)
     
-	# with normalizing flow
-    #KL_divergence += tf.reduce_sum(log_det, 1)
+    # set to True for normalizing flow
+    if normalizing_flow:
+        nf_divergence, log_det = KLNormalizingFlowPrior(prior)
+        KL_divergence += nf_divergence(prior)
+    else:
+        log_det = tf.zeros_like([1])  # only so that calling routine works. This is a Kludge.
 
-    #print("shape log_det: ", log_det.shape)
-    #print("shape mu: ", mu.shape)
-
-    # KL += log_det  leads to determinants going to zero. WHY? 
-    # KL -= log_det  leads to determinants going to infinity, but much slower. Why? 
-    #
-    #
 
     # implement normal flow for the prior (inital mean=0, sigma=1)
     # E_q0 \log p(z) = E_q0 \log p(z0) - E_q0 \sum_i \log(det_i )
     # I need to be able to sample from p(z)
     # z0 ~ N(0,1) ==> zk = f(z0)
 
+    # mean over batch dimension
     marginal_likelihood = tf.reduce_mean(marginal_likelihood)
     KL_divergence = tf.reduce_mean(KL_divergence)
 
