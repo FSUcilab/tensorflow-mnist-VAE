@@ -11,9 +11,9 @@ class Prior():
     def getLogDeterminant(self):
         return self.nf.getLogDeterminant()
 
-	def sample(self):
-    	n = 10,000
-    	z = tf.contrib.distributions.Normal(tf.zeros([n]), tf.ones([n])).sample()
+    def sample(self):
+        n = 10000
+        z = tf.contrib.distributions.Normal(tf.zeros([n]), tf.ones([n])).sample()
 
 # Gaussian MLP as encoder
 def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
@@ -96,7 +96,8 @@ def KLStochastic(mu, sigma):
 
 def KLNormalizingFlowPrior(prior):
     log_det = prior.getLogDeterminant()
-    KL_divergence = tf.reduce_sum(log_det, 1)
+    #KL_divergence = tf.reduce_sum(log_det, 1)
+    KL_divergence = log_det
     return KL_divergence, log_det
 
 # Gateway
@@ -142,7 +143,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
     #KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
 
-    analytic_KL = True
+    analytic_KL = False
     normalizing_flow = True
 
     if analytic_KL:
@@ -152,7 +153,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     
     # set to True for normalizing flow
     if normalizing_flow:
-        nf_divergence, _ = KLNormalizingFlowPrior(prior)
+        nf_divergence, log_det = KLNormalizingFlowPrior(prior)
         KL_divergence += nf_divergence
     else:
         log_det = tf.zeros_like([1])  # only so that calling routine works. This is a Kludge.

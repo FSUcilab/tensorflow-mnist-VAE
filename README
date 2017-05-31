@@ -71,4 +71,8 @@ Use stochastic (as opposed to analytic) ELBO. Single z sample, average over batc
 	normalizing_flow  = True  (in vae.py)
 Modified vae: input z in N(0,1) into the NF calculation on the prior, as opposed to (mu,sigma) output from the encoder. 
 This is the only way to allow sampling when using the network as a generator. 
+stopped code after 718 iterations. L_tot still decreasing. 
+Reached a minimum of 54.14 at iteration 711. 
+----------------------------------------------------------------------
+results19/: repeat of results17/ with NF (vae), but with stochastic on. Let us see if stochastic case is fixed. 
 ----------------------------------------------------------------------
