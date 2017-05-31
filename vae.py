@@ -107,12 +107,11 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # sampling by re-parameterization technique
     z = mu + sigma * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
 
-    # Feed this z to the prior calculation
-    z = mu + sigma * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
-    z0 = z  # to connect to Normalizing flow code
+    # Feed this z in N(0,1) to the prior calculation
+    z0 = tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
 
     # Normal distribution evaluated at z0
-    q0 = tf.exp(-0.5*(z-mu)**2 / sigma**2) / (2.*np.pi*sigma**2)**0.5
+    q0 = tf.exp(-0.5*(z0-mu)**2 / sigma**2) / (2.*np.pi*sigma**2)**0.5
     q0 = tf.reduce_prod(q0, axis=1)
 
     # Feed (z0,q0) to the normalizing flow code (Must make this easier)
@@ -139,8 +138,8 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
     #KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
 
-    analytic_KL = False
-    normalizing_flow = False
+    analytic_KL = True
+    normalizing_flow = True
 
     if analytic_KL:
         KL_divergence = KLAnalytic(mu, sigma)
@@ -149,8 +148,8 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     
     # set to True for normalizing flow
     if normalizing_flow:
-        nf_divergence, log_det = KLNormalizingFlowPrior(prior)
-        KL_divergence += nf_divergence(prior)
+        nf_divergence, _ = KLNormalizingFlowPrior(prior)
+        KL_divergence += nf_divergence
     else:
         log_det = tf.zeros_like([1])  # only so that calling routine works. This is a Kludge.
 
