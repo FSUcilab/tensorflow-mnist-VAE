@@ -45,8 +45,12 @@ class LinearTransform():
         self.determinant = tf.abs(1 + tf.matmul(self._psi(wT_dot_z_plus_b), tf.reshape(self.u, (-1,1))))
         # equivalent to q_out = q / self.determinant (more numerically stable?)
         q_out = tf.exp(tf.log(q) - tf.log(self.determinant))
+        #q_out = tf.exp(tf.log(tf.reshape(q, [-1,1])) - tf.log(self.determinant))
         #print("determ linear shape: ", self.determinant.shape)
-        return (z_out, q_out)
+        #print("q shape: ", q.shape)
+        #print("q shape: ", q.get_shape())
+        #return (z_out, tf.log(tf.reshape(q, [-1,1])))
+        return (z_out, q_out)  # returns (300,300) 
 
     def getParams(self):
         return [self.w, self.u, self.b]

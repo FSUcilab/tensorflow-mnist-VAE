@@ -74,7 +74,7 @@ This is the only way to allow sampling when using the network as a generator.
 stopped code after 718 iterations. L_tot still decreasing. 
 Reached a minimum of 54.14 at iteration 711. 
 ----------------------------------------------------------------------
-results19/: repeat of results18/ with NF (vae), but with stochastic on. Let us see if stochastic case is fixed. 
+results19/: repeat of results18/ with NF (vaeNF), but with stochastic on. Let us see if stochastic case is fixed. 
 Seems to converge much faster than results18 which is based on the exact KL. Why is that? 
     analytic_KL = False
     normalizing_flow = True
@@ -98,5 +98,15 @@ results23/: repeat of results 22.
 ----------------------------------------------------------------------
 Next series of simulations will have additional diagnostics with plots of p(z). 
 ----------------------------------------------------------------------
+results24/: test plotting of the prior, which is no longer a Gaussian N(0,1), but rather has a correlation of 1. What is the 
+significance of this? The standard deviation appears to be increasing in time. 
+
+	analytic_KL       = True  (in vae.py)
+	normalizing_flow  = True  (in vae.py)
+
+I get the feeling that plotting the prior is slowing down the code substantially. Perhaps I should only plot it every 50 epochs? 
+Adding timing routines might be useful. 
+----------------------------------------------------------------------
+results25/: with z_dim=2, try lr=1.e-3
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------

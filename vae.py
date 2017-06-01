@@ -29,12 +29,11 @@ class Prior():
 
     def sample(self):
         # N(0,1)
-        # return actual real numbgers
-        n = 300
+        # return actual real numbers
+        n = 10000
         z0 = np.random.normal(np.zeros([n, self.input_dim]), np.ones([n, self.input_dim]))
         q0 = np.exp(-0.5*z0**2) / (2.*np.pi)**0.5
-        q0 = np.prod(q0, axis=1).reshape(-1,1)
-        print("xx q0 shape: ", q0.shape)
+        q0 = np.prod(q0, axis=1, keepdims=True)  # shape of (n,1)
         return z0, q0
 
 # Gaussian MLP as encoder
@@ -123,13 +122,13 @@ def KLNormalizingFlowPrior(prior):
     return KL_divergence, log_det
 
 # Gateway
-def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
+def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob, KL_anal, NF, NF_pairs):
     # encoding
     mu, sigma = gaussian_MLP_encoder(x_hat, n_hidden, dim_z, keep_prob)
 
     # prior via normalizing flow
-    transform_names = ['radial', 'linear'] * 2
-    transform_names = ['linear']
+    transform_names = ['radial', 'linear'] * NF_pairs
+    #transform_names = ['linear']
     prior = Prior(dim_z, transform_names)
 
     # sampling by re-parameterization technique
@@ -140,7 +139,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
 
     # Normal distribution evaluated at z0
     q0 = tf.exp(-0.5*(z0-mu)**2 / sigma**2) / (2.*np.pi*sigma**2)**0.5
-    q0 = tf.reduce_prod(q0, axis=1)
+    q0 = tf.reduce_prod(q0, axis=1, keep_dims=True)  # shape [npts, 1]
 
     # Feed (z0,q0) to the normalizing flow code (Must make this easier)
     zk, qk = prior.flow(z0, q0)
@@ -160,8 +159,8 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     # KL(q(z|x) || p(z)) = E_q0 [ log(q(z|x) - p(z)) ]
     #KL_divergence = 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma) - tf.log(1e-8 + tf.square(sigma)) - 1, 1)
 
-    analytic_KL = False
-    normalizing_flow = True
+    analytic_KL = KL_anal
+    normalizing_flow = NF
 
     if analytic_KL:
         KL_divergence = KLAnalytic(mu, sigma)

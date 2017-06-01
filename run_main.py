@@ -31,6 +31,18 @@ def parse_args():
 
     parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
 
+    parser.add_argument('--KLAnal', type=bool, default=True,
+                        help='Boolean: controls whether KL is computed analytically if possible')
+
+    parser.add_argument('--NF', type=bool, default=False,
+                        help='Boolean: controls whether normalizing flow is active')
+
+    parser.add_argument('--NFPairs', type=int, default=4,
+                        help='Integer: the number of (radial/linear pairs of normalizing flow layers')
+
+    parser.add_argument('--PRIOR', type=bool, default=True,
+                        help='Boolean for plotting priors')
+
     parser.add_argument('--PRR', type=bool, default=True,
                         help='Boolean for plot-reproduce-result')
 
@@ -61,6 +73,7 @@ def parse_args():
     parser.add_argument('--PMLR_n_samples', type=int, default=5000,
                         help='Number of samples in order to get distribution of labeled data')
 
+    print("Program arguments: ", parser.parse_args())
     return check_args(parser.parse_args())
 
 """checking arguments"""
@@ -114,6 +127,8 @@ def check_args(args):
     except:
         print('batch size must be larger than or equal to one')
 
+    # -- NF, KLAnal, NFPairs
+
     # --PRR
     try:
         assert args.PRR == True or args.PRR == False
@@ -133,6 +148,13 @@ def check_args(args):
             assert args.PRR_resize_factor > 0
         except:
             print('PRR : resize factor for each displayed image must be positive')
+
+    # --PRIOR
+    try:
+        assert args.PRIOR == True or args.PRIOR == False
+    except:
+        print("PRIOR must be boolean type")
+        return None
 
     # --PMLR
     try:
@@ -191,6 +213,14 @@ def main(args):
     batch_size = args.batch_size
     learn_rate = args.learn_rate
 
+    # Normalizing flow
+    KL_anal  = args.KLAnal
+    NF       = args.NF
+    NF_pairs = args.NFPairs
+    
+    # Prior
+    PRIOR = args.PRIOR
+
     # Plot
     PRR = args.PRR                              # Plot Reproduce Result
     PRR_n_img_x = args.PRR_n_img_x              # number of images along x-axis in a canvas
@@ -223,7 +253,7 @@ def main(args):
     z_in = tf.placeholder(tf.float32, shape=[None, dim_z], name='latent_variable')
 
     # network architecture
-    y, z, loss, neg_marginal_likelihood, KL_divergence, log_det, prior, zk, qk = vae.autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob)
+    y, z, loss, neg_marginal_likelihood, KL_divergence, log_det, prior, zk, qk = vae.autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob, KL_anal, NF, NF_pairs)
 
     # optimization
     train_op = tf.train.AdamOptimizer(learn_rate).minimize(loss)
@@ -295,19 +325,18 @@ def main(args):
             print("epoch %d: L_tot %04.2f L_likelihood %04.2f L_divergence %04.2f" % (epoch, tot_loss, loss_likelihood, loss_divergence))
             print("   min/max log_det= ", logdet.min(), logdet.max())
 
-            # plot prior
-            z0, q0 = prior.sample()
-            zzk, qqk =  sess.run([zk, qk], feed_dict={prior.z0: z0, prior.q0: q0.reshape(-1)})
-            print("zk: ", [zzk[k].shape for k in range(len(zzk))])
-            print("qk: ", [qqk[k].shape for k in range(len(qqk))])
-            quit()
-            saveScatteredImage(zk[-1], qk[-1], filename="prior.png", directory="results")
-            print("FINISH")
-            quit()
 
             # if minimum loss is updated or final epoch, plot results
             if min_tot_loss > tot_loss or epoch+1 == n_epochs:
                 min_tot_loss = tot_loss
+
+                # plot prior
+                if PRIOR and dim_z == 2:
+                    z0, q0 = prior.sample()  # q0.shape: (n, -1)
+                    zzk, qqk =  sess.run([zk, qk], feed_dict={prior.z0: z0, prior.q0: q0})
+                    fn = "/prior_epoch_%04d.png" % epoch
+                    saveScatteredImage(zzk[-1], qqk[-1], epoch, filename=fn, directory="results")
+
                 # Plot for reproduce performance
                 if PRR:
                     y_PRR = sess.run(y, feed_dict={x_hat: x_PRR, keep_prob : 1})
