@@ -65,7 +65,7 @@ results17/: repeat of result15 without NF (vae). 20 latent variables. lr=1.e-4. 
 Most of the above runs (certainly the last 8) use an analytical formulation of KL + cross-entropy, and a stochastic calculation for 
 the determinants with only a single sample. It will be interesting to compare results when the KL is fully stochastic with a single sample.
 ----------------------------------------------------------------------
-results18/: repeat of result17 without NF (vae). 20 latent variables. lr=1.e-4.  Stopped at 800 iterations (appears to have converged)
+results18/: repeat of result17 with NF (vaeNF). 20 latent variables. lr=1.e-4.  Stopped at 800 iterations (appears to have converged)
 Use stochastic (as opposed to analytic) ELBO. Single z sample, average over batch. 
 	analytic_KL       = True  (in vae.py)
 	normalizing_flow  = True  (in vae.py)
@@ -74,5 +74,29 @@ This is the only way to allow sampling when using the network as a generator.
 stopped code after 718 iterations. L_tot still decreasing. 
 Reached a minimum of 54.14 at iteration 711. 
 ----------------------------------------------------------------------
-results19/: repeat of results17/ with NF (vae), but with stochastic on. Let us see if stochastic case is fixed. 
+results19/: repeat of results18/ with NF (vae), but with stochastic on. Let us see if stochastic case is fixed. 
+Seems to converge much faster than results18 which is based on the exact KL. Why is that? 
+    analytic_KL = False
+    normalizing_flow = True
+----------------------------------------------------------------------
+NOT YET DONE
+results20/: repeat of results19. 20-D latency space. Stochatic KL, vaeNF. 
+	analytic_KL       = False  (in vae.py)
+	normalizing_flow  = True  (in vae.py)
+----------------------------------------------------------------------
+results21/: repeat of results18. 20-D latency space.
+	analytic_KL       = True  (in vae.py)
+	normalizing_flow  = True  (in vae.py)
+----------------------------------------------------------------------
+results22/: 
+	analytic_KL       = False  (in vae.py)
+	normalizing_flow  = False  (in vae.py)
+----------------------------------------------------------------------
+results23/: repeat of results 22. 
+	analytic_KL       = False  (in vae.py)
+	normalizing_flow  = False  (in vae.py)
+----------------------------------------------------------------------
+Next series of simulations will have additional diagnostics with plots of p(z). 
+----------------------------------------------------------------------
+----------------------------------------------------------------------
 ----------------------------------------------------------------------

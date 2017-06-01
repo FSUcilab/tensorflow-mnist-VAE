@@ -4,6 +4,7 @@ import mnist_data
 import os
 import vae
 import plot_utils
+from normalizing_flow.plots import saveScatteredImage
 import glob
 
 import argparse
@@ -222,7 +223,7 @@ def main(args):
     z_in = tf.placeholder(tf.float32, shape=[None, dim_z], name='latent_variable')
 
     # network architecture
-    y, z, loss, neg_marginal_likelihood, KL_divergence, log_det = vae.autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob)
+    y, z, loss, neg_marginal_likelihood, KL_divergence, log_det, prior, zk, qk = vae.autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob)
 
     # optimization
     train_op = tf.train.AdamOptimizer(learn_rate).minimize(loss)
@@ -294,6 +295,16 @@ def main(args):
             print("epoch %d: L_tot %04.2f L_likelihood %04.2f L_divergence %04.2f" % (epoch, tot_loss, loss_likelihood, loss_divergence))
             print("   min/max log_det= ", logdet.min(), logdet.max())
 
+            # plot prior
+            z0, q0 = prior.sample()
+            zzk, qqk =  sess.run([zk, qk], feed_dict={prior.z0: z0, prior.q0: q0.reshape(-1)})
+            print("zk: ", [zzk[k].shape for k in range(len(zzk))])
+            print("qk: ", [qqk[k].shape for k in range(len(qqk))])
+            quit()
+            saveScatteredImage(zk[-1], qk[-1], filename="prior.png", directory="results")
+            print("FINISH")
+            quit()
+
             # if minimum loss is updated or final epoch, plot results
             if min_tot_loss > tot_loss or epoch+1 == n_epochs:
                 min_tot_loss = tot_loss
@@ -312,6 +323,10 @@ def main(args):
                     # plot distribution of labeled images
                     z_PMLR = sess.run(z, feed_dict={x_hat: x_PMLR, keep_prob : 1})
                     PMLR.save_scattered_image(z_PMLR,id_PMLR, name="/PMLR_map_epoch_%04d" % (epoch) + ".jpg")
+
+                else:
+                    # use t-sne to plot the results
+                    pass
 
 if __name__ == '__main__':
 

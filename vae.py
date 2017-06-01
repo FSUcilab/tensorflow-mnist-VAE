@@ -6,14 +6,36 @@ import numpy as np
 class Prior():
     def __init__(self, input_dim, transform_names):
         # Not clear how this initialization works
+        self.input_dim = input_dim
+        self.transform_names = transform_names
+        self.nb_layers = len(transform_names)
         self.nf = NormalizingFlow(transform_names=transform_names, input_dim=input_dim) #, exact=target_pdf)
+    # Feed (z0,q0) to the normalizing low code (Must make this easier)
+
+    def flow(self, z0, q0):
+        self.z0 = z0
+        self.q0 = q0
+        self.zk = [self.z0]
+        self.qk = [self.q0]
+        for k in range(self.nb_layers):
+            z_next, q_next = self.nf.transforms[k](self.zk[k], self.qk[k])
+            self.zk.append(z_next)
+            self.qk.append(q_next)
+
+        return self.zk, self.qk
 
     def getLogDeterminant(self):
         return self.nf.getLogDeterminant()
 
     def sample(self):
-        n = 10000
-        z = tf.contrib.distributions.Normal(tf.zeros([n]), tf.ones([n])).sample()
+        # N(0,1)
+        # return actual real numbgers
+        n = 300
+        z0 = np.random.normal(np.zeros([n, self.input_dim]), np.ones([n, self.input_dim]))
+        q0 = np.exp(-0.5*z0**2) / (2.*np.pi)**0.5
+        q0 = np.prod(q0, axis=1).reshape(-1,1)
+        print("xx q0 shape: ", q0.shape)
+        return z0, q0
 
 # Gaussian MLP as encoder
 def gaussian_MLP_encoder(x, n_hidden, n_output, keep_prob):
@@ -107,6 +129,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
 
     # prior via normalizing flow
     transform_names = ['radial', 'linear'] * 2
+    transform_names = ['linear']
     prior = Prior(dim_z, transform_names)
 
     # sampling by re-parameterization technique
@@ -120,13 +143,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     q0 = tf.reduce_prod(q0, axis=1)
 
     # Feed (z0,q0) to the normalizing flow code (Must make this easier)
-    layers = len(transform_names)
-    zk = [z0]
-    qk = [q0]
-    for k in range(layers):
-        z_next, q_next = prior.nf.transforms[k](zk[k], qk[k])
-        zk.append(z_next)
-        qk.append(q_next)
+    zk, qk = prior.flow(z0, q0)
 
     # decoding 
     # The input to the decoder is still a sample from the Gaussian q(z|x)
@@ -169,7 +186,7 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob):
     KL_divergence = tf.reduce_mean(KL_divergence)
     ELBO = marginal_likelihood - KL_divergence
     loss = -ELBO
-    return y, z, loss, -marginal_likelihood, KL_divergence, log_det
+    return y, z, loss, -marginal_likelihood, KL_divergence, log_det, prior, zk, qk
 
 def decoder(z, dim_img, n_hidden):
     y = bernoulli_MLP_decoder(z, n_hidden, dim_img, 1.0, reuse=True)
