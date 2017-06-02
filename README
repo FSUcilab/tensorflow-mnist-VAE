@@ -101,12 +101,20 @@ Next series of simulations will have additional diagnostics with plots of p(z).
 results24/: test plotting of the prior, which is no longer a Gaussian N(0,1), but rather has a correlation of 1. What is the 
 significance of this? The standard deviation appears to be increasing in time. 
 
+Program arguments:  Namespace(PMLR=True, PMLR_n_img_x=20, PMLR_n_img_y=20, PMLR_n_samples=5000, PMLR_resize_factor=1.0, PMLR_z_range=2.0, PRIOR=True, PRR=True, PRR_n_img_x=10, PRR_n_img_y=10, PRR_resize_factor=1.0, add_noise=False, batch_size=128, dim_z=2, learn_rate=0.0001, n_hidden=500, num_epochs=2000, results_path='results')
+
 	analytic_KL       = True  (in vae.py)
 	normalizing_flow  = True  (in vae.py)
 
 I get the feeling that plotting the prior is slowing down the code substantially. Perhaps I should only plot it every 50 epochs? 
 Adding timing routines might be useful. 
 ----------------------------------------------------------------------
-results25/: with z_dim=2, try lr=1.e-3
+results25/: with z_dim=2, try lr=1.e-3, with 
+
+Program arguments:  Namespace(KLAnal=True, NF=True, NFPairs=4, PMLR=True, PMLR_n_img_x=20, PMLR_n_img_y=20, PMLR_n_samples=5000, PMLR_resize_factor=1.0, PMLR_z_range=2.0, PRIOR=True, PRR=True, PRR_n_img_x=10, PRR_n_img_y=10, PRR_resize_factor=1.0, add_noise=False, batch_size=128, dim_z=2, learn_rate=0.0001, n_hidden=500, num_epochs=2000, results_path='results')
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------

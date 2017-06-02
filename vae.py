@@ -142,7 +142,12 @@ def autoencoder(x_hat, x, dim_img, dim_z, n_hidden, keep_prob, KL_anal, NF, NF_p
     q0 = tf.reduce_prod(q0, axis=1, keep_dims=True)  # shape [npts, 1]
 
     # Feed (z0,q0) to the normalizing flow code (Must make this easier)
-    zk, qk = prior.flow(z0, q0)
+    if NF:
+        zk, qk = prior.flow(z0, q0)
+    else:
+        prior.z0 = z0
+        prior.q0 = q0
+        zk, qk = None, None
 
     # decoding 
     # The input to the decoder is still a sample from the Gaussian q(z|x)

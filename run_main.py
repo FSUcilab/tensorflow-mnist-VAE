@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--results_path', type=str, default='results',
                         help='File path of output images')
 
-    parser.add_argument('--add_noise', type=bool, default=False, help='Boolean for adding salt & pepper noise to input image')
+    parser.add_argument('--add_noise', type=lambda s: s.lower() in ['true', 't', 'yes', '1'], default=False, help='Boolean for adding salt & pepper noise to input image')
 
     parser.add_argument('--dim_z', type=int, default='20', help='Dimension of latent vector', required = True)
 
@@ -31,19 +31,19 @@ def parse_args():
 
     parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
 
-    parser.add_argument('--KLAnal', type=bool, default=True,
+    parser.add_argument('--KLAnal', type=lambda s: s.lower() in ['true', 't', 'yes', '1'], default=True,
                         help='Boolean: controls whether KL is computed analytically if possible')
 
-    parser.add_argument('--NF', type=bool, default=False,
+    parser.add_argument('--NF', type=lambda s: s.lower() in ['true', 't', 'yes', '1'], default=False,
                         help='Boolean: controls whether normalizing flow is active')
 
     parser.add_argument('--NFPairs', type=int, default=4,
                         help='Integer: the number of (radial/linear pairs of normalizing flow layers')
 
-    parser.add_argument('--PRIOR', type=bool, default=True,
+    parser.add_argument('--PRIOR', type=lambda s: s.lower() in ['true', 't', 'yes', '1'], default=True, #action="store_true", 
                         help='Boolean for plotting priors')
 
-    parser.add_argument('--PRR', type=bool, default=True,
+    parser.add_argument('--PRR', type=lambda s: s.lower() in ['true', 't', 'yes', '1'], default=True,
                         help='Boolean for plot-reproduce-result')
 
     parser.add_argument('--PRR_n_img_x', type=int, default=10,
@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument('--PRR_resize_factor', type=float, default=1.0,
                         help='Resize factor for each displayed image')
 
-    parser.add_argument('--PMLR', type=bool, default=False,
+    parser.add_argument('--PMLR', type=lambda s: s.lower() in ['true', 't', 'yes', '1'], default=False,
                         help='Boolean for plot-manifold-learning-result')
 
     parser.add_argument('--PMLR_n_img_x', type=int, default=20,
@@ -73,8 +73,12 @@ def parse_args():
     parser.add_argument('--PMLR_n_samples', type=int, default=5000,
                         help='Number of samples in order to get distribution of labeled data')
 
+    args = parser.parse_args()
+
     print("Program arguments: ", parser.parse_args())
-    return check_args(parser.parse_args())
+    print(args._get_args())
+    print(dir(args))
+    return check_args(args)
 
 """checking arguments"""
 def check_args(args):
@@ -154,7 +158,12 @@ def check_args(args):
         assert args.PRIOR == True or args.PRIOR == False
     except:
         print("PRIOR must be boolean type")
-        return None
+        quit()
+
+    if args.PRIOR == True: 
+        if args.NF == False:
+            print("prior == true implies NF == true")
+            quit()
 
     # --PMLR
     try:
@@ -168,6 +177,7 @@ def check_args(args):
             assert args.dim_z == 2
         except:
             print('PMLR : dim_z must be two')
+            quit()
 
         # --PMLR_n_img_x, --PMLR_n_img_y
         try:
@@ -198,6 +208,7 @@ def check_args(args):
 """main function"""
 def main(args):
 
+    print("*** args= ", args)
     """ parameters """
     RESULTS_DIR = args.results_path
 
@@ -361,6 +372,7 @@ if __name__ == '__main__':
 
     # parse arguments
     args = parse_args()
+    print("args: ", args)
     if args is None:
         exit()
 
